@@ -38,7 +38,7 @@ filter = "ip and not port 22"
 
 -- 应用识别 / DPI
 applabel   = true
-dpi        = true
+dpi        = false
 maxpayload = 1024       -- 每方向最多采 1024 字节 payload
 maxexport  = maxpayload
 udp_payload = true
@@ -56,7 +56,7 @@ flow2ftp = {
   ftp_dir  = "/",   -- 还原区 FTP 目录 A
 
   -- 本地滚动文件策略
-  rotate_interval_sec = 600,  -- 每 600s 强制切新文件
+  rotate_interval_sec = 60,  -- 每 600s 强制切新文件
   rotate_size_mb      = 100,  -- 单文件最大 100 MiB
   file_prefix         = "flows_",  -- flows_YYYYMMDD_HHMMSS_xxx.csv.gz
 
