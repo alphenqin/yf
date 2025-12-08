@@ -16,7 +16,11 @@
 # 1. 构建阶段：编译 libfixbuf / YAF / super_mediator
 # ================================
 
-FROM debian:bookworm-slim AS builder
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS builder
+
+# ===== 多平台参数（不影响你的逻辑）=====
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 ARG APT_PROXY
 ENV DEBIAN_FRONTEND=noninteractive
@@ -77,13 +81,13 @@ RUN HTTP_PROXY=${APT_PROXY} HTTPS_PROXY=${APT_PROXY} \
 # 2. 运行阶段
 # ================================
 
-FROM debian:bookworm-slim AS runtime
+FROM --platform=$TARGETPLATFORM debian:bookworm-slim AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN set -eux; \
     rm -f /etc/apt/sources.list.d/debian.sources || true; \
     echo "deb http://mirrors.aliyun.com/debian bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list; \
-    echo "deb http://mirrors.aliyun.com/debian-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list; \
+    echo "deb http://mirrors.aliyun.com/debian bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list; \
     echo "deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
