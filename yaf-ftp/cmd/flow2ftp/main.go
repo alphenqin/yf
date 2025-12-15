@@ -50,6 +50,10 @@ func main() {
 	}
 	log.Printf("[INFO] 数据目录已就绪: %s", *dataDir)
 
+	// 公共上下文
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// 创建 Writer
 	w := writer.NewWriter(*dataDir, cfg.FilePrefix, cfg.RotateIntervalSec, cfg.RotateSizeMB)
 
@@ -80,9 +84,6 @@ func main() {
 	log.Printf("[INFO] FTP 上传器已启动，上传间隔: %ds", cfg.UploadIntervalSec)
 
 	// 设置信号处理
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
