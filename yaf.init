@@ -68,7 +68,7 @@ flow2ftp = {
 
   -- 状态上报（可选）
   status_report = {
-    enabled = false,                    -- 需要上报时改为 true
+    enabled = true,                    -- 需要上报时改为 true
     url = "http://127.0.0.1:8080/api/uploadStatus", -- 上报地址
     interval_sec = 60,                  -- 上报周期（秒）
     uuid = ""                           -- 留空则使用 hostname
