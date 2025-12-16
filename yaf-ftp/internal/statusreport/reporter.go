@@ -3,9 +3,11 @@ package statusreport
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -151,5 +153,70 @@ func (r *Reporter) reportOnce() {
 
 	if resp.StatusCode >= 300 {
 		log.Printf("[WARN] 状态上报返回非 2xx: %s", resp.Status)
+	}
+
+	// 本地落盘（可选）
+	if r.cfg.FilePath != "" {
+		if err := r.appendToFile(b); err != nil {
+			log.Printf("[WARN] 状态上报落盘失败: %v", err)
+		}
+	}
+}
+
+// appendToFile 追加写入文件并做简单大小轮转
+func (r *Reporter) appendToFile(data []byte) error {
+	path := r.cfg.FilePath
+	if path == "" {
+		return nil
+	}
+	// 确保目录存在
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+
+	// 简单轮转：超过阈值则按顺序备份
+	if err := r.rotateIfNeeded(path); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	ts := time.Now().Format(time.RFC3339)
+	if _, err := f.WriteString(ts + " " + string(data) + "\n"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *Reporter) rotateIfNeeded(path string) error {
+	maxBytes := int64(r.cfg.FileMaxMB) * 1024 * 1024
+	if maxBytes <= 0 {
+		return nil
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if info.Size() < maxBytes {
+		return nil
+	}
+
+	// 不删除历史，只寻找下一个未占用的后缀，追加保存
+	for i := 1; ; i++ {
+		next := fmt.Sprintf("%s.%03d", path, i)
+		if _, err := os.Stat(next); os.IsNotExist(err) {
+			return os.Rename(path, next)
+		}
+		// 若存在则继续递增，直到找到空闲名
+		if i > 100000 {
+			return fmt.Errorf("轮转文件过多，放弃重命名: %s", path)
+		}
 	}
 }

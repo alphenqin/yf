@@ -40,6 +40,9 @@ type StatusReportConfig struct {
 	URL         string
 	IntervalSec int
 	UUID        string
+	FilePath    string
+	FileMaxMB   int
+	FileBackups int
 }
 
 // LoadConfig 从 yaf.init 文件中解析 flow2ftp 配置块
@@ -210,6 +213,19 @@ func LoadConfig(configPath string) (*Flow2FTPConfig, error) {
 			if v := tbl.RawGetString("uuid"); v != nil && v != lua.LNil {
 				cfg.StatusReport.UUID = v.String()
 			}
+			if v := tbl.RawGetString("file_path"); v != nil && v != lua.LNil {
+				cfg.StatusReport.FilePath = v.String()
+			}
+			if v := tbl.RawGetString("file_max_mb"); v != nil && v != lua.LNil {
+				if num, ok := v.(lua.LNumber); ok {
+					cfg.StatusReport.FileMaxMB = int(num)
+				}
+			}
+			if v := tbl.RawGetString("file_backups"); v != nil && v != lua.LNil {
+				if num, ok := v.(lua.LNumber); ok {
+					cfg.StatusReport.FileBackups = int(num)
+				}
+			}
 		}
 	}
 
@@ -260,6 +276,12 @@ func validateConfig(cfg *Flow2FTPConfig) error {
 		// URL 需非空
 		if cfg.StatusReport.URL == "" {
 			return fmt.Errorf("status_report.url 不能为空（已启用 enabled=true）")
+		}
+		if cfg.StatusReport.FileMaxMB <= 0 {
+			cfg.StatusReport.FileMaxMB = 10
+		}
+		if cfg.StatusReport.FileBackups < 0 {
+			cfg.StatusReport.FileBackups = 0
 		}
 	}
 
