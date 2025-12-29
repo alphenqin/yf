@@ -96,20 +96,32 @@ func (w *Writer) shouldRotate() bool {
 // rotateFile 滚动到新文件
 func (w *Writer) rotateFile() error {
 	// 关闭当前文件
+	hadOpenFile := w.currentGzip != nil || w.currentFile != nil
+	var gzipCloseErr error
+	var fileCloseErr error
 	if w.currentGzip != nil {
-		w.currentGzip.Close()
+		gzipCloseErr = w.currentGzip.Close()
 		w.currentGzip = nil
 	}
 	if w.currentFile != nil {
-		w.currentFile.Close()
+		fileCloseErr = w.currentFile.Close()
 		w.currentFile = nil
+	}
+	if gzipCloseErr != nil || fileCloseErr != nil {
+		if gzipCloseErr != nil && fileCloseErr != nil {
+			return fmt.Errorf("关闭 gzip writer 失败: %v; 关闭文件失败: %w", gzipCloseErr, fileCloseErr)
+		}
+		if gzipCloseErr != nil {
+			return fmt.Errorf("关闭 gzip writer 失败: %w", gzipCloseErr)
+		}
+		return fmt.Errorf("关闭文件失败: %w", fileCloseErr)
+	}
 
-		// 将 .part 文件重命名为 .csv.gz
-		if w.currentPath != "" {
-			finalPath := w.currentPath[:len(w.currentPath)-5] + ".csv.gz"
-			if err := os.Rename(w.currentPath, finalPath); err != nil {
-				return fmt.Errorf("重命名文件失败: %w", err)
-			}
+	// 将 .part 文件重命名为 .csv.gz
+	if hadOpenFile && w.currentPath != "" {
+		finalPath := w.currentPath[:len(w.currentPath)-5] + ".csv.gz"
+		if err := os.Rename(w.currentPath, finalPath); err != nil {
+			return fmt.Errorf("重命名文件失败: %w", err)
 		}
 	}
 
