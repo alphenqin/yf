@@ -13,29 +13,29 @@ import (
 
 // Uploader 负责定时扫描目录并上传文件到 FTP
 type Uploader struct {
-	ftpHost          string
-	ftpPort          int
-	ftpUser          string
-	ftpPass          string
-	ftpDir           string
-	dataDir          string
+	ftpHost           string
+	ftpPort           int
+	ftpUser           string
+	ftpPass           string
+	ftpDir            string
+	dataDir           string
 	uploadIntervalSec int
-	stopChan         chan struct{}
-	doneChan         chan struct{}
+	stopChan          chan struct{}
+	doneChan          chan struct{}
 }
 
 // NewUploader 创建新的 Uploader
 func NewUploader(ftpHost string, ftpPort int, ftpUser, ftpPass, ftpDir, dataDir string, uploadIntervalSec int) *Uploader {
 	return &Uploader{
-		ftpHost:          ftpHost,
-		ftpPort:          ftpPort,
-		ftpUser:          ftpUser,
-		ftpPass:          ftpPass,
-		ftpDir:           ftpDir,
-		dataDir:          dataDir,
+		ftpHost:           ftpHost,
+		ftpPort:           ftpPort,
+		ftpUser:           ftpUser,
+		ftpPass:           ftpPass,
+		ftpDir:            ftpDir,
+		dataDir:           dataDir,
 		uploadIntervalSec: uploadIntervalSec,
-		stopChan:         make(chan struct{}),
-		doneChan:         make(chan struct{}),
+		stopChan:          make(chan struct{}),
+		doneChan:          make(chan struct{}),
 	}
 }
 
@@ -284,4 +284,3 @@ func (u *Uploader) ensureRemoteDir(conn *ftp.ServerConn, dir string) error {
 	}
 	return nil
 }
-
